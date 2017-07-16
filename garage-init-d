@@ -1,0 +1,47 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          garaged
+# Required-Start:    $syslog $local_fs $network
+# Required-Stop:     $syslog $local_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start the garage daemon
+# Description:       micro webserver to control garage doors
+### END INIT INFO
+
+set -e
+
+GARAGED=/usr/local/garaged/garage.py
+PIDFILE=/var/run/garaged.pid
+
+# Check for daemon presence
+[ -x "$GARAGED" ] || exit 0
+
+# Get lsb functions
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+    log_begin_msg "Starting garaged..."
+    start-stop-daemon --start --background --oknodo \
+		      --pidfile $PIDFILE --make-pidfile \
+		      --chdir $(dirname $GARAGED) \
+		      --exec "$GARAGED"
+    log_end_msg $?
+    ;;
+  stop)
+    log_begin_msg "Stopping garaged..."
+    start-stop-daemon --stop --oknodo --retry 2 \
+		      --pidfile $PIDFILE  --remove-pidfile \
+		      --exec "$GARAGED"
+    log_end_msg $?
+    ;;
+  restart|reload|force-reload)
+    $0 stop
+    sleep 1
+    $0 start
+    ;;
+  *)
+    log_success_msg "Usage: /etc/init.d/garaged {start|stop|restart|reload|force-reload}"
+    exit 1
+esac
