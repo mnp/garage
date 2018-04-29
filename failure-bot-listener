@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+
+'''
+
+Read socket and drive relays for Raspberry Pi 2 Model B
+Lines on socket must be in the following form or no action occurs
+
+    COMPONENT COLOR PERPETRATOR
+
+test:
+    echo 'cxserver red binion' | nc 0 9999
+'''
+
+import atexit
+import datetime
+import SocketServer
+import RPi.GPIO as GPIO
+from time import sleep
+
+relays = [18, 23, 24, 25]
+colors = ["red", "blue", "yellow", "white"]
+
+def setup_relays():
+    GPIO.setmode(GPIO.BCM)
+    for r in relays:
+        GPIO.setup(r, GPIO.OUT)
+
+def cleanup_relays():
+    log("cleaning up")
+    GPIO.cleanup()
+
+def all_relays(state):
+    for r in relays: GPIO.output(r, state)
+
+def flash_all_relays():
+    all_relays(GPIO.LOW)
+    sleep(1)
+    all_relays(GPIO.HIGH)
+
+def relay_on(color):
+    try:
+        cidx = colors.index(color)
+    except:
+        log("bad color %s ignored" % (color))
+	return
+    all_relays(GPIO.HIGH)
+    GPIO.output(relays[cidx], GPIO.LOW)
+
+def log(msg):
+    print("%s %s" % (datetime.datetime.utcnow().strftime("%x-%X-UTC"), msg))
+
+class MyTCPHandler(SocketServer.BaseRequestHandler):
+    """
+    The request handler class for our server.
+
+    It is instantiated once per connection to the server, and must
+    override the handle() method to implement communication to the
+    client.
+    """
+
+    def handle(self):
+        # self.request is the TCP socket connected to the client
+        str = ''
+        recvd = self.request.recv(1024)
+        while recvd:
+            str += recvd.strip()
+            recvd = self.request.recv(1024)            
+        if str:
+            words = str.split()
+            if len(words) == 3:
+                (component, color, perpetrator) = words   
+                log("%s sent {%s, %s, %s}" % (self.client_address[0], component, color, perpetrator))
+                state = "okay"
+            else:
+                log("%s sent bad line: %s" % (self.client_address[0], str))
+                state = "bad line"                
+        else:
+            log("%s sent empty string" % (self.client_address[0]))
+            state = "error"
+        
+        self.request.sendall(state + "\n")
+        relay_on(color)
+
+if __name__ == "__main__":
+    HOST, PORT = "0.0.0.0", 9999
+
+    atexit.register(cleanup_relays)
+    setup_relays()
+    flash_all_relays()
+    server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
+    log("Listening on {}:{}".format(HOST, PORT))
+    server.serve_forever()
+
