@@ -15,7 +15,7 @@ Hopefully someone will find this useful.
 * a terminal strip to attach all the external wires
 * a scrap of plywood to mount everything on
 
-![assembled board photo][https://raw.githubusercontent.com/mnp/garage/master/assembled-board.jpg]
+![assembled board photo](https://raw.githubusercontent.com/mnp/garage/master/assembled-board.jpg)
 
 # The Software
 
