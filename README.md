@@ -25,5 +25,7 @@ Hopefully someone will find this useful.
 * The webpage contains a little JS, Bootstrap, and HTML to show current state and actuate buttons for each door.
 * There's also Raspian init.d and logrotate configs.
 
+![This is what the very simple UI looks like.](https://raw.githubusercontent.com/mnp/garage/master/ui.png)
+
 TODO
  - I'm currently using the RPi switch debouncer, which is needed for the magnetic sensors.  The UI however needs to reflect door moving states.
